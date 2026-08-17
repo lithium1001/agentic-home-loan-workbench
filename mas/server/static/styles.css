@@ -1,0 +1,1173 @@
+/* Agentic Home Loan Workbench — three-pane planner UI ("information system" shell).
+   Visual language: Inter font, deep bank-blue #0B4F8A accent, green/amber status,
+   COOL neutrals (slate-tinted white). Layout: left rail (workflow switch +
+   track-filtered deal progress + docs) · center structured case workspace — the
+   main surface (borrower strip, calculator KPI card, assessment result,
+   income/docs/flags grid) · right = the Assistant chat pane (fixed 400px): the MAS
+   conversation surface with the thinking chain, HITL gate and stage action chips.
+   The proportions are the point — information is the body, the agent chat assists.
+
+   Re-skin 2026-07-08 (palette + corners only; layout/components unchanged):
+   "sharp institutional / bank internal system". Moved OFF the warm-cream+navy
+   AI-default cluster → cool slate-tinted neutrals, a single confident bank-blue
+   accent, tight 5px corners everywhere, crisper hairline rules. All warm-neutral
+   surfaces (#F7F5F1 / #FAFAF8 / #F0EDE8) and ad-hoc blue tints are now routed
+   through the --surface* / --accent-tint* tokens below — change them here, not
+   inline. */
+:root {
+  /* Accent / type — deep navy #00237B (user-supplied). Used for logo, figures,
+     active states, links. The var is still named --navy so every existing
+     reference keeps working. */
+  --navy: #00237B;
+  --navy-deep: #001A5C;      /* hover / pressed accent */
+
+  /* Band / card header strip — brand blue #005EB8 desaturated + lightened one step
+     (#2E77C2) so the full-width strip reads softer, not glaring; white text stays
+     readable. Both .ic-title and .calc-head use these. The header sits on a hue
+     between the soft strip and the deep-navy type, tying the two together. */
+  --header-bg: #2E77C2;
+  --header-fg: #FFFFFF;
+  --header-fg-soft: #D3E4F5; /* muted white for meta text on the blue header */
+  --header-mark-bg: #FFFFFF; /* solid chip for the ✦ badge so it doesn't melt in */
+  --green: #157F3C;
+  --amber: #C2680C;
+  --grey: #9CA3AD;           /* neutral grey (was青-cool #9AA4B0) */
+  --ink: #16191E;            /* near-black, faintly warm-neutral (was青 #0F1720) */
+  --ink-soft: #5C626B;
+  --line: #E1E2E5;           /* neutral hairline (was青-cool #DDE3EA) */
+  --line-strong: #CACBCF;    /* stronger neutral border for card/band boundaries */
+  --line-soft: #EDEEEF;
+  --bg: #EFEFF0;             /* neutral off-white canvas (was青 slate #EDF0F4) */
+  --panel: #FFFFFF;
+  --chip-bg: #F0F0F1;
+  --radius: 5px;             /* tight institutional corners (was 10px) */
+
+  /* Surface neutrals — near-hueless greys (dropped the blue-青 cast that read as
+     "morgue" cool; kept institutional restraint, not the old warm cream). */
+  --surface: #F6F6F7;        /* subtle neutral fill (was青 #F4F6F9) */
+  --surface-alt: #ECECEE;    /* header-strip / band-title fill (was青 #EBEFF3) */
+  /* Accent tints — cool blue washes for selected/active/quiet-accent states
+     (replace the ad-hoc #F5F8FD / #EEF3FB / #E8F0FC / #F0F4FA family). */
+  --accent-tint: #EAF1F8;    /* lightest hover/active wash */
+  --accent-tint-2: #DCE8F4;  /* selected wash */
+  --accent-line: #C6D8EA;    /* border on tinted chips/pills */
+
+  /* Customer wizard content width. Caps the cards / form / results so they keep
+     their designed size and stay left-aligned, while the step header and progress
+     line above them span the full workspace. One knob for the whole wizard. */
+  --cx-content: 1035px;
+  /* Assistant side panel. A variable so the narrow-screen media queries can shrink
+     it without restating the rule at every use site. */
+  --copilot-w: 400px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  font-size: 13.5px;
+  /* Institutional register: Inter's contextual alternates + a hair of negative
+     tracking for a tighter, more "system" feel (not the airy default). */
+  font-feature-settings: 'cv05' 1, 'ss01' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Financial figures read as a ledger: tabular (monospaced) numerals so money
+   columns align digit-for-digit, and slightly tighter tracking. Applied to the
+   numeric surfaces only — KPI tiles, the summary strip, and the CBS pill. */
+.kpi-v, .cs-v, .bs-cbs, .fv.em .fv-v {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  letter-spacing: -0.01em;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────── */
+.topbar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: 20;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  background: var(--navy); color: #fff;
+  border-radius: 5px; font-weight: 700; font-size: 12px;
+}
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+.brand-text strong { font-size: 14px; }
+.brand-sub { font-size: 11px; color: var(--ink-soft); }
+
+.case-switcher { position: relative; display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.case-current { text-align: right; line-height: 1.2; cursor: pointer; }
+.case-label { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); }
+.case-name { font-size: 13.5px; font-weight: 600; }
+.case-meta { font-size: 11.5px; color: var(--ink-soft); }
+.switch-btn {
+  border: 1px solid var(--line); background: var(--panel);
+  border-radius: 5px; padding: 6px 11px; cursor: pointer;
+  font: inherit; font-size: 12.5px; color: var(--navy); font-weight: 500;
+}
+.switch-btn:hover { background: var(--accent-tint); }
+
+.case-picker {
+  position: absolute; top: 48px; right: 0; width: 320px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: 0 12px 32px rgba(0,0,0,.13);
+  overflow: hidden;
+}
+.picker-head, .logpane-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 14px; font-weight: 600; font-size: 12.5px;
+  border-bottom: 1px solid var(--line);
+}
+.picker-close { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--ink-soft); }
+.picker-list { max-height: 60vh; overflow-y: auto; }
+.picker-row {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 9px 14px; cursor: pointer; border-top: 1px solid var(--line-soft);
+}
+.picker-row:hover { background: var(--accent-tint); }
+.picker-row.current { background: var(--accent-tint); }
+.picker-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.picker-info { line-height: 1.3; }
+.picker-info .nm { font-weight: 600; font-size: 13px; }
+.picker-info .mt { font-size: 11.5px; color: var(--ink-soft); }
+
+/* ── Layout ──────────────────────────────────────────────────────── */
+/* No left rail: the nav row on top of the workspace carries the workflow
+   switch + stage path; a future module icon-rail can slot in as a new flex
+   column without touching anything here. */
+.layout { display: flex; height: calc(100vh - 56px); }
+
+/* Documents checklist marks (used by the Documents band in the workspace) */
+.doc-item { display: flex; align-items: center; gap: 8px; padding: 4px 0 4px 4px; font-size: 12.5px; }
+.doc-tick { width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; font-size: 9px; color: #fff; flex-shrink: 0; }
+.doc-tick.done { background: var(--green); }
+.doc-tick.miss { background: #fff; border: 1.5px solid var(--grey); }
+.doc-item.miss .nm { color: var(--ink-soft); }
+
+/* ── Center: structured case workspace (the planner) ─────────────── */
+.center { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--surface); }
+
+/* Nav header — two stacked rows: workflow track selector on top, the stage path
+   below it (separated by a hairline so the two nav levels read as distinct). */
+.workspace-head {
+  display: flex; flex-direction: column; gap: 0;
+  border-bottom: 1px solid var(--line); background: var(--panel); flex-shrink: 0;
+}
+
+/* Row 1 — segmented workflow track selector (IPA → LO / Reprice) */
+.wf-switch {
+  display: flex; gap: 2px; background: var(--surface-alt); border-radius: 5px; padding: 3px;
+  align-self: flex-start; margin: 9px 22px 8px;
+}
+.wf-seg {
+  border: none; border-radius: 6px; padding: 6px 14px; cursor: pointer;
+  font: inherit; font-size: 12px; background: transparent; color: var(--ink-soft); white-space: nowrap;
+}
+.wf-seg:hover { color: var(--ink); }
+.wf-seg.active {
+  background: #fff; color: var(--navy); font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+/* Row 2 — horizontal stage path (Salesforce-path style), under a hairline */
+.stagebar {
+  display: flex; align-items: center; gap: 8px; list-style: none; margin: 0;
+  padding: 8px 22px; min-width: 0; overflow-x: auto;
+  border-top: 1px solid var(--line-soft);
+}
+.sb-item {
+  display: flex; align-items: center; gap: 7px; cursor: pointer;
+  padding: 5px 12px; border-radius: 5px; border: 1px solid transparent; white-space: nowrap;
+}
+.sb-item:hover { background: var(--accent-tint); }
+.sb-item.active { background: var(--accent-tint-2); border-color: var(--accent-line); }
+.sb-dot {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--grey); background: #fff;
+  display: grid; place-items: center; font-size: 8px; color: #fff; font-weight: 800;
+}
+.sb-item.done .sb-dot { background: var(--green); border-color: var(--green); }
+.sb-item.active .sb-dot { background: var(--navy); border-color: var(--navy); }
+.sb-num { font-size: 10px; color: var(--grey); font-weight: 700; }
+.sb-label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
+.sb-item.active .sb-label { color: var(--navy); }
+.sb-connector { width: 22px; height: 2px; background: var(--line); flex-shrink: 0; }
+
+/* Slim context bar (v3): step guidance before assessment, ✓ note after */
+.context-bar {
+  padding: 8px 22px; font-size: 11.5px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--accent-tint); border-bottom: 1px solid #D8E6F8; color: #4A6FA5;
+}
+.context-bar:empty { display: none; }
+.context-bar.done { background: #F0FDF4; border-bottom-color: #D1FAE5; color: var(--ink-soft); }
+.context-bar .cb-strong { font-weight: 700; color: var(--navy); }
+.context-bar.done .cb-strong { color: var(--green); }
+.context-bar .cb-dot { color: #BFCFE8; }
+
+.workspace { flex: 1; overflow-y: auto; padding: 18px 22px; }
+
+/* Case header — one slim identity row; the facts live in the info cards */
+.case-head {
+  display: flex; align-items: center; gap: 12px;
+  padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px solid var(--line);
+}
+.avatar {
+  width: 38px; height: 38px; border-radius: 50%; background: var(--accent-tint-2);
+  display: grid; place-items: center; font-size: 14px; font-weight: 700;
+  color: var(--navy); flex-shrink: 0;
+}
+.ch-main { min-width: 0; }
+.ch-name { font-size: 15.5px; font-weight: 700; line-height: 1.2; }
+.ch-meta { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
+.bs-cbs {
+  margin-left: auto; font-size: 12px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 4px; padding: 2px 8px; color: var(--ink-soft); font-weight: 500;
+}
+
+/* Loan Scenario calculator card (KPIs from calculate_loan) */
+.planner { margin-bottom: 18px; }
+.planner-empty {
+  padding: 14px; border: 1px dashed var(--line); border-radius: var(--radius);
+  font-size: 12px; color: var(--ink-soft); text-align: center;
+}
+/* Matches the info-band boundary treatment (stronger border + hairline lift) so
+   the Loan Scenario card and the category bands read as one system. */
+.calc-card {
+  background: var(--panel); border: 1px solid var(--line-strong);
+  border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 35, 123, .08);
+}
+/* Header strip unified with .ic-title: soft-blue report header, white title. */
+.calc-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 18px; background: var(--header-bg);
+  box-shadow: inset 0 -2px 0 rgba(0, 35, 123, .25);
+}
+.calc-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--header-fg);
+}
+/* Rate pill sits on the blue header: solid white chip with navy text so it reads
+   as a crisp, clearly-bounded value badge on the softer strip. */
+.calc-rate {
+  font-size: 11.5px; color: var(--navy); background: #fff;
+  border: 1px solid rgba(0, 35, 123, .15); border-radius: 5px; padding: 2px 9px; font-weight: 700;
+}
+/* Amber when the card was re-priced by an RM adjustment (e.g. rate → 1.2%). */
+.calc-rate.adj { color: var(--amber); background: #FFF7ED; border-color: #FDE68A; }
+.calc-pending { font-size: 11px; color: var(--header-fg-soft); }
+.calc-kpis { display: flex; padding: 14px 18px; gap: 10px; flex-wrap: wrap; }
+/* flex-basis auto (not 0) so a tile with a long money value takes the width it
+   needs instead of clipping it; overflow-wrap is the last-resort fallback. */
+.kpi {
+  background: var(--surface); border-radius: 5px; padding: 10px 16px;
+  min-width: 96px; flex: 1 1 auto;
+}
+.kpi-k {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--grey); font-weight: 600; margin-bottom: 4px;
+}
+.kpi-v { font-size: 20px; font-weight: 700; color: var(--navy); line-height: 1.05; overflow-wrap: anywhere; }
+.kpi-v.muted { color: #D4D1CB; }
+.kpi-sub { font-size: 10px; color: var(--ink-soft); margin-top: 2px; }
+
+/* Pre-assessment hint / post-assessment Monthly-TDSR-Eligibility summary strip */
+.calc-hint { padding: 14px 18px; font-size: 12px; color: var(--grey); font-style: italic; border-top: 1px solid var(--line-soft); }
+.calc-summary { display: flex; padding: 14px 18px; border-top: 1px solid var(--line-soft); }
+.cs-cell { flex: 1; padding: 0 20px; border-right: 1px solid var(--line-soft); }
+.cs-cell:first-child { padding-left: 0; }
+.cs-cell.wide { flex: 1.3; border-right: none; }
+.cs-k { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--grey); font-weight: 600; margin-bottom: 3px; }
+.cs-v { font-size: 24px; font-weight: 700; line-height: 1.05; }
+.cs-v.navy { color: var(--navy); }
+.cs-v.green { color: var(--green); }
+.cs-v.amber { color: var(--amber); }
+.cs-sub { font-size: 11px; color: var(--ink-soft); margin-top: 1px; }
+.cs-sub.green { color: var(--green); }
+.cs-sub.amber { color: var(--amber); }
+.elig { display: inline-flex; align-items: center; gap: 8px; border-radius: 5px; padding: 8px 12px; margin-top: 2px; }
+.elig.ok { background: #F0FDF4; border: 1.5px solid #D1FAE5; }
+.elig.warn { background: #FFF7ED; border: 1.5px solid #FDE68A; }
+.elig-mark { font-size: 16px; }
+.elig-txt { font-size: 12.5px; font-weight: 700; }
+.elig.ok .elig-txt { color: var(--green); }
+.elig.warn .elig-txt { color: #92400E; }
+
+/* Case information — one slim full-width band per category; fields flow
+   horizontally as label-over-value pairs and wrap on narrow windows */
+.info-rows { display: flex; flex-direction: column; gap: 14px; }
+/* Each category is a distinct band: stronger cool border + a hairline lift so it
+   separates crisply from the canvas, with the title as a full-width tinted header
+   strip (report/ledger style) rather than a floating label. overflow:hidden lets
+   the header strip's fill run edge-to-edge without breaking the rounded corner. */
+.info-row {
+  background: var(--panel); border: 1px solid var(--line-strong);
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 35, 123, .08);
+}
+.ic-title {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--header-fg); margin: 0;
+  padding: 8px 16px; background: var(--header-bg);
+  /* hairline of the deeper navy under the strip so the header↔body edge stays
+     crisp even on the softer blue */
+  box-shadow: inset 0 -2px 0 rgba(0, 35, 123, .25);
+}
+/* Everything after the header strip (field grid, flags, docs, tdsr bar, or the
+   "no data" fallback) gets the band's inner padding — robust to whatever body the
+   band() helper injects. First body element pads top; last pads bottom. */
+.ic-title ~ * { padding-left: 16px; padding-right: 16px; }
+.ic-title + * { padding-top: 12px; }
+.info-row > :last-child { padding-bottom: 13px; }
+.fv-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 20px; align-items: start;
+}
+.fv { min-width: 0; }
+.fv-k {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--grey); font-weight: 600; margin-bottom: 2px;
+}
+.fv-v { font-size: 13px; font-weight: 600; overflow-wrap: break-word; line-height: 1.35; }
+.fv.ok .fv-v { color: var(--green); }
+.fv.em .fv-v { font-size: 15px; color: var(--navy); }
+.fv.wide { grid-column: span 2; }
+.fv.wide .fv-v { font-weight: 500; }
+.tdsr-wrap { max-width: 520px; margin-top: 12px; }
+.tdsr-bar { margin-top: 6px; height: 5px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.tdsr-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width .3s; }
+.tdsr-fill.warn { background: var(--amber); }
+.tdsr-scale { display: flex; justify-content: space-between; margin-top: 2px; }
+.tdsr-scale span { font-size: 10px; color: var(--grey); }
+/* Documents as an inline checklist inside its band */
+.doc-inline { display: flex; flex-wrap: wrap; gap: 8px 26px; }
+.doc-inline .doc-item { padding: 0; }
+
+/* ── Assistant pane (right) — the MAS conversation surface ─────────── */
+/* A full chat pane, not a section: the multi-agent system is the product's
+   core, so its thinking chain / answers / HITL gate get a proper column. The
+   center workspace keeps the flex majority — info is the body, chat assists. */
+.copilot {
+  width: var(--copilot-w); flex-shrink: 0; display: flex; flex-direction: column;
+  background: var(--panel); border-left: 1px solid var(--line); min-width: 0;
+}
+/* Blue header strip, unified with the workspace bands (.ic-title / .calc-head) so
+   the left workspace and the right Assistant pane share one header language. */
+.copilot-head {
+  display: flex; align-items: center; gap: 8px; padding: 11px 15px;
+  background: var(--header-bg); flex-shrink: 0;
+  box-shadow: inset 0 -2px 0 rgba(0, 35, 123, .25);
+}
+/* Solid white chip with a navy glyph so the badge reads as a distinct mark on the
+   blue strip instead of melting into it. */
+.analysis-mark {
+  width: 22px; height: 22px; background: var(--header-mark-bg); color: var(--navy);
+  border-radius: 5px; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.analysis-title { font-weight: 600; font-size: 13px; color: var(--header-fg); }
+.log-link { margin-left: auto; font-size: 11.5px; color: var(--header-fg-soft); text-decoration: none; }
+.log-link:hover { color: var(--header-fg); }
+/* Clear sits beside the Activity log link. It takes the `margin-left:auto` so the
+   PAIR is pushed right as a unit; the following link then only needs a small gap,
+   otherwise a second auto margin would split them to opposite ends of the header. */
+.clear-link {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; font-size: 11.5px; color: var(--header-fg-soft);
+}
+.clear-link + .log-link { margin-left: 14px; }
+.clear-link:hover { color: var(--header-fg); }
+.an-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--grey); font-weight: 600; margin-bottom: 10px;
+}
+
+/* Case flags — inline inside their band; note follows the label */
+.case-flags { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.flag { display: flex; align-items: center; gap: 8px; }
+.flag-left { display: flex; align-items: center; gap: 7px; }
+.flag-dot {
+  width: 14px; height: 14px; border-radius: 50%; display: grid; place-items: center;
+  flex-shrink: 0; font-size: 8px; font-weight: 800; color: #fff;
+}
+.flag-dot.ok { background: var(--green); }
+.flag-dot.warn { background: #FEF3C7; border: 1.5px solid #FDE68A; color: var(--amber); }
+.flag-dot.bad { background: #FEE2E2; border: 1.5px solid #FCA5A5; color: #B91C1C; }
+.flag-label { font-size: 12px; color: var(--ink); }
+.flag-note { font-size: 11px; color: var(--ink-soft); font-weight: 500; }
+.flag.warn .flag-note { color: var(--amber); }
+
+/* Loan Scenario footer — the assistant's reasoning, collapsed by default. */
+.calc-foot { padding: 12px 18px 14px; border-top: 1px solid var(--line-soft); }
+.ar-reason {
+  background: #FEFCE8; border: 1px solid #FEF3C7; border-radius: 5px;
+  padding: 9px 11px; font-size: 11.5px; color: #92400E;
+}
+.ar-reason-head {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; font-weight: 600; font-size: 11px; color: var(--amber);
+}
+.ar-caret { transition: transform .15s; }
+.ar-reason.open .ar-caret { transform: rotate(180deg); }
+.ar-reason-body { display: none; margin-top: 6px; color: #7A4E00; }
+.ar-reason.open .ar-reason-body { display: block; }
+
+/* Chat — fills the Assistant pane between its header and the composer */
+.chat {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 14px 15px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.chat > * { flex-shrink: 0; }
+.chat-empty { font-size: 12px; color: var(--grey); font-style: italic; padding: 4px 0; }
+
+.msg { max-width: 100%; }
+.msg.rm { align-self: flex-end; max-width: 92%; }
+.msg.rm .bubble {
+  background: var(--navy); color: #fff; border-radius: 5px 5px 2px 5px;
+  padding: 9px 12px; white-space: pre-wrap; line-height: 1.5; font-size: 12.5px;
+}
+.msg.agent .bubble {
+  background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 5px 5px 5px 2px; padding: 10px 12px; white-space: pre-wrap;
+  line-height: 1.55; font-size: 12.5px;
+}
+.msg.note .bubble {
+  background: #FFF7E8; border: 1px solid #F4D58A; color: #8A5A00;
+  border-radius: 5px; padding: 9px 13px; font-size: 12.5px;
+}
+
+/* Sources strip under an agent reply — policy clauses retrieved this turn. */
+.src-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 7px; padding-left: 2px; }
+.src-label { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); font-weight: 600; }
+.src-tag { font-size: 11px; color: var(--navy); background: var(--accent-tint); border: 1px solid var(--accent-line); border-radius: 4px; padding: 2px 9px; white-space: nowrap; }
+
+/* Letter PDF attachment card (Claude-style) under a draft / released agent bubble */
+.letter-card { display: flex; align-items: center; gap: 11px; margin-top: 11px;
+  padding: 9px 12px; max-width: 340px; border-radius: 10px; text-decoration: none;
+  background: #fff; border: 1px solid var(--accent-line, #d7dee8);
+  box-shadow: 0 1px 2px rgba(16,24,40,.05); transition: border-color .12s, box-shadow .12s; }
+.letter-card:hover { border-color: var(--navy); box-shadow: 0 2px 8px rgba(16,24,40,.10); }
+.letter-glyph { flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 40px; border-radius: 5px; background: #e5352b; color: #fff;
+  font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+.letter-meta { display: flex; flex-direction: column; min-width: 0; }
+.letter-name { font-size: 13px; font-weight: 600; color: var(--ink, #1a1a1a);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.letter-sub { font-size: 11px; color: var(--ink-soft, #667085); margin-top: 1px; }
+.letter-card .letter-tag { flex: none; margin-left: auto; font-size: 9.5px; font-weight: 700;
+  letter-spacing: .06em; color: #b45309; background: #fef3c7; border: 1px solid #fcd34d;
+  border-radius: 3px; padding: 1px 5px; }
+
+/* Thinking block */
+.think {
+  align-self: stretch; max-width: 100%;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--surface); overflow: hidden;
+}
+.think-head {
+  display: flex; align-items: center; gap: 8px; padding: 9px 13px;
+  cursor: pointer; font-size: 12.5px; color: var(--ink-soft);
+}
+.think-head .ttl { font-weight: 500; color: var(--ink); }
+.think-head .dur { margin-left: auto; font-size: 11px; color: var(--ink-soft); }
+.think-head .think-caret { font-size: 10px; color: #9CA3AF; transition: transform .15s; }
+.think-head .dur + .think-caret { margin-left: 6px; }
+.think-head .think-caret:only-of-type { margin-left: auto; }
+.think.open .think-caret { transform: rotate(180deg); }
+.think-body { padding: 0 13px 11px 13px; font-size: 12px; color: var(--ink-soft); white-space: pre-wrap; line-height: 1.5; display: none; }
+.think.open .think-body { display: block; }
+.spinner {
+  width: 11px; height: 11px; border: 2px solid var(--navy); border-top-color: transparent;
+  border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0;
+}
+.think.done .spinner { display: none; }
+.think .check { color: var(--green); display: none; }
+.think.done .check { display: inline; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Misroute prompt */
+.misroute {
+  align-self: stretch; max-width: 100%;
+  background: #FFF7E8; border: 1px solid #F4D58A; border-radius: 5px;
+  padding: 11px 14px; font-size: 12.5px; color: #8A5A00;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.misroute .mr-actions { display: flex; gap: 7px; margin-left: auto; }
+.mr-btn { border: 1px solid #D9A441; background: #fff; color: #8A5A00; border-radius: 6px; padding: 4px 11px; cursor: pointer; font: inherit; font-size: 12px; }
+.mr-btn.primary { background: var(--amber); border-color: var(--amber); color: #fff; }
+
+/* HITL row (inside the analysis panel) */
+.hitl {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 11px 15px; background: var(--accent-tint); border-top: 1px solid var(--accent-line); flex-shrink: 0;
+}
+.hitl-label { font-size: 12px; color: var(--navy); font-weight: 500; width: 100%; }
+.revise-input { flex: 1; min-width: 140px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 5px; font: inherit; font-size: 12px; }
+
+/* Composer + action chips (the guided prompts for the current stage) */
+.composer { padding: 10px 15px 14px; border-top: 1px solid var(--line); background: var(--panel); flex-shrink: 0; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.chips:empty { display: none; }
+.chip {
+  border: 1px solid var(--line); background: var(--chip-bg); border-radius: 5px;
+  padding: 5px 11px; cursor: pointer; font: inherit; font-size: 11.5px; color: var(--ink); text-align: left;
+}
+.chip:hover { background: var(--surface-alt); }
+.chip.primary { border-color: var(--amber); color: var(--amber); background: #FFF7ED; font-weight: 500; }
+.chip.primary::before {
+  content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px;
+  border-radius: 50%; background: var(--amber); vertical-align: middle;
+}
+.composer-row { display: flex; gap: 6px; align-items: flex-end; }
+.input {
+  flex: 1; resize: none; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 5px; font: inherit; font-size: 12px; line-height: 1.4; max-height: 80px;
+  background: var(--surface); color: var(--ink);
+}
+.input:focus { outline: none; border-color: var(--navy); background: #fff; }
+
+.btn { border: none; border-radius: 5px; padding: 8px 14px; cursor: pointer; font: inherit; font-size: 12px; font-weight: 500; }
+.btn-send {
+  width: 32px; height: 32px; padding: 0; background: var(--surface-alt); color: var(--ink-soft);
+  border-radius: 5px; display: grid; place-items: center; font-size: 14px; flex-shrink: 0;
+}
+.btn-send:hover { background: var(--navy); color: #fff; }
+.btn-send:disabled { background: var(--surface-alt); color: #C4C0BA; cursor: default; }
+.btn-approve { background: var(--green); color: #fff; }
+.btn-revise { background: #fff; border: 1px solid var(--navy); color: var(--navy); }
+.btn-cancel { background: #fff; border: 1px solid var(--line); color: var(--ink-soft); }
+.btn-cancel:hover { background: var(--surface-alt); }
+
+/* `display:flex/grid` on an element overrides the [hidden] attribute's
+   implicit display:none, so hidden panels stay visible. Force it back. */
+[hidden] { display: none !important; }
+
+/* Activity log slide-over */
+.logpane {
+  width: 380px; flex-shrink: 0; border-left: 1px solid var(--line);
+  background: var(--panel); display: flex; flex-direction: column;
+}
+.logpane-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 12px; }
+.log-empty { color: var(--ink-soft); }
+
+/* per-turn group */
+.log-turn { margin-bottom: 14px; }
+.log-turn-head {
+  margin: 0 0 6px; padding: 6px 10px; border-radius: 6px;
+  background: #F1F5F9; border: 1px solid #CBD5E1;
+  font-size: 11.5px; font-weight: 700; color: #334155;
+}
+
+/* routing chain */
+.log-chain { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; padding: 2px 0 8px; }
+.log-badge {
+  display: inline-block; padding: 3px 9px; border-radius: 4px;
+  border: 1px solid; font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.log-chain .arrow { color: #9CA3AF; margin: 0 2px; }
+
+/* message / tool cards */
+.log-card { margin: 5px 0; padding: 7px 9px; border-radius: 5px; }
+.log-card-head {
+  display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+}
+.log-tag { font-size: 9.5px; font-weight: 700; padding: 1px 7px; border-radius: 4px; }
+.log-route { font-size: 11px; color: var(--ink-soft); }
+.log-tool-name { font-family: monospace; font-size: 11.5px; color: #92400E; font-weight: 600; }
+.log-caret { margin-left: auto; color: #9CA3AF; font-size: 10px; transition: transform .15s; }
+.log-card.open .log-caret { transform: rotate(180deg); }
+.log-sub { font-size: 10.5px; color: var(--ink-soft); margin: 5px 0 2px; }
+.log-exec { font-size: 11px; color: #92400E; margin-top: 4px; }
+.log-pre {
+  margin: 3px 0 0; padding: 6px 8px; background: #fff; border: 1px solid var(--line);
+  border-radius: 4px; font-size: 11px; white-space: pre-wrap; word-break: break-word;
+  max-height: 260px; overflow-y: auto;
+}
+.log-pre.result { background: #F0FDF4; border-color: #BBF7D0; }
+/* collapsed state: hide the full body, show the one-line preview */
+.log-card .log-pre, .log-card .log-sub, .log-card .log-exec { display: none; }
+.log-card .log-preview { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+.log-card.open .log-pre, .log-card.open .log-sub, .log-card.open .log-exec { display: block; }
+.log-card.open .log-preview { display: none; }
+.log-card.tool .log-preview { display: none; }  /* tool cards have no preview line */
+
+/* markdown inside agent bubbles and expanded thinking summaries */
+.bubble.md > :first-child, .think-body.md > :first-child { margin-top: 0; }
+.bubble.md > :last-child, .think-body.md > :last-child { margin-bottom: 0; }
+.bubble.md p, .think-body.md p { margin: 0 0 8px; line-height: 1.55; }
+.bubble.md ul, .bubble.md ol,
+.think-body.md ul, .think-body.md ol { margin: 6px 0 8px; padding-left: 20px; }
+.bubble.md li, .think-body.md li { margin: 2px 0; }
+.bubble.md strong, .think-body.md strong { font-weight: 600; }
+.bubble.md code, .think-body.md code {
+  background: var(--surface-alt); padding: 1px 5px; border-radius: 4px;
+  font-size: 12px; font-family: ui-monospace, monospace;
+}
+.bubble.md pre, .think-body.md pre {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 9px 11px; overflow-x: auto; margin: 6px 0;
+}
+.bubble.md pre code, .think-body.md pre code { background: none; padding: 0; }
+.bubble.md table, .think-body.md table { border-collapse: collapse; margin: 8px 0; font-size: 12px; width: 100%; }
+.bubble.md th, .bubble.md td,
+.think-body.md th, .think-body.md td { border: 1px solid var(--line); padding: 5px 9px; text-align: left; }
+.bubble.md th, .think-body.md th { background: var(--line-soft); font-weight: 600; }
+.bubble.md h1, .bubble.md h2, .bubble.md h3,
+.think-body.md h1, .think-body.md h2, .think-body.md h3 { font-size: 14px; margin: 10px 0 6px; }
+.bubble.md a, .think-body.md a { color: var(--navy); }
+
+/* ── Customer self-service portal (/customer) ─────────────────────────────
+   Reuses the workbench visual system (bands, calc-card, chat); only the
+   calculator form + intent cards are new. */
+.role-switch { margin-left: auto; }
+.role-switch .switch-btn { text-decoration: none; display: inline-block; }
+
+/* Wizard step header — three labels over a progress line with a house marker
+   riding the fill edge (DBS-marketplace style).
+
+   The wizard itself is NOT width-capped: the step labels and the progress line are
+   chrome for the whole workspace, so they stretch to fill it (a 1080px-capped rule
+   here left ~450px of dead space to their right on a 1920px screen). The cap moved
+   onto the content blocks below instead — that keeps the intent cards and the form
+   at their designed size and left-aligned, rather than stretching them flat. */
+.cx-wizard { max-width: none; }
+.cx-steps-head { display: flex; margin-bottom: 6px; }
+.cx-step {
+  flex: 1; text-align: center; border: none; background: none; cursor: default;
+  font: inherit; font-size: 13.5px; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ink-soft); padding: 6px 4px; line-height: 1.35;
+}
+.cx-step.done { color: var(--ink); cursor: pointer; }
+.cx-step.done:hover { color: var(--navy); }
+.cx-step.active { color: var(--navy); font-weight: 700; }
+.cx-progress {
+  position: relative; height: 3px; background: var(--line);
+  border-radius: 2px; margin: 10px 0 26px;
+}
+.cx-progress-fill {
+  height: 100%; width: 13%; background: var(--navy); border-radius: 2px;
+  transition: width .35s ease;
+}
+.cx-progress-icon {
+  position: absolute; top: -13px; left: 13%; transform: translateX(-50%);
+  font-size: 20px; color: var(--navy); background: transparent; line-height: 1;
+  transition: left .35s ease;
+}
+.cx-lead { font-size: 17px; font-weight: 600; color: var(--ink-soft); margin: 0 0 16px; }
+
+/* Content width cap — applied per BLOCK, not to the wizard, so the step header and
+   progress line above span the full workspace while everything below keeps its
+   designed width and sits CENTRED under them. --cx-content is the single knob.
+
+   margin-inline (not the `margin` shorthand) because .cx-lead carries its own
+   `margin: 0 0 16px` further up; the shorthand would reset that bottom gap. */
+.cx-panel > .cx-lead,
+.cx-intents,
+.cx-disclaimer,
+.cx-panel > .cx-form-card,
+.cx-panel > .cx-assets,
+.cx-panel > .planner,
+.cx-panel > .cx-nav { max-width: var(--cx-content); margin-inline: auto; }
+
+/* Intent cards (DBS-marketplace style entry points) — 4 across, wrap on narrow.
+   auto-fit + minmax already reflows them; the cap above is what stops the four
+   cards from being stretched flat on a wide screen. */
+.cx-intents { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.cx-intent {
+  text-align: center; cursor: pointer; font: inherit;
+  background: var(--panel); border: 1px solid var(--line-strong);
+  border-radius: var(--radius); padding: 30px 18px 34px;
+  box-shadow: 0 1px 3px rgba(0, 35, 123, .08);
+  transition: border-color .12s, box-shadow .12s, transform .12s;
+}
+.cx-intent:hover {
+  border-color: var(--navy); box-shadow: 0 4px 14px rgba(0, 35, 123, .14);
+  transform: translateY(-2px);
+}
+.cx-intent.active { border-color: var(--navy); background: var(--accent-tint); }
+.cx-intent.active .cxi-title { color: var(--navy); }
+.cxi-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.cxi-sub { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; }
+
+/* Step panels + nav */
+.cx-panel { animation: cxfade .25s ease; }
+@keyframes cxfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.cx-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.cx-back { background: var(--panel); border: 1px solid var(--line); color: var(--ink-soft); }
+.cx-back:hover { color: var(--navy); border-color: var(--accent-line); }
+.cx-nav .btn-calc { width: auto; padding: 9px 22px; }
+
+/* Mode note strip inside the results card (e.g. "budget not the limit") */
+.cx-note {
+  padding: 9px 18px; font-size: 12px; color: var(--navy);
+  background: var(--accent-tint); border-bottom: 1px solid var(--accent-line);
+}
+
+/* ── Role-selection landing (/) ─────────────────────────────────────────── */
+.landing-body { display: flex; flex-direction: column; height: 100vh; }
+.landing {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 30px 20px 60px; background: var(--surface);
+}
+.landing-title { font-size: 26px; font-weight: 700; color: var(--ink); margin: 0 0 8px; }
+.landing-sub { font-size: 14px; color: var(--ink-soft); margin: 0 0 34px; }
+.landing-cards { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; }
+.landing-card {
+  width: 320px; padding: 34px 28px 28px; text-decoration: none; text-align: center;
+  background: var(--panel); border: 1px solid var(--line-strong);
+  border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 35, 123, .08);
+  transition: border-color .12s, box-shadow .12s, transform .12s;
+}
+.landing-card:hover {
+  border-color: var(--navy); box-shadow: 0 8px 24px rgba(0, 35, 123, .16);
+  transform: translateY(-3px);
+}
+.lc-icon { font-size: 40px; margin-bottom: 14px; }
+.lc-title { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.lc-sub { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; min-height: 56px; }
+.lc-cta { font-size: 13px; font-weight: 600; color: var(--navy); margin-top: 12px; }
+.landing-note { margin-top: 34px; font-size: 11.5px; color: var(--grey); max-width: 560px; text-align: center; }
+
+/* Input form inside its band */
+.cx-form-card { margin-bottom: 16px; }
+.cx-form {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px 18px; padding-top: 12px; padding-bottom: 14px;
+}
+.cxf label {
+  display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--grey); font-weight: 600; margin-bottom: 4px;
+}
+.cxf input, .cxf select {
+  width: 100%; padding: 7px 10px; border: 1px solid var(--line);
+  border-radius: 5px; font: inherit; font-size: 12.5px; background: var(--surface);
+  color: var(--ink);
+}
+.cxf input:focus, .cxf select:focus { outline: none; border-color: var(--navy); background: #fff; }
+.cx-action { display: flex; align-items: flex-end; }
+.btn-calc {
+  background: var(--navy); color: #fff; width: 100%; padding: 9px 14px; font-weight: 600;
+}
+.btn-calc:hover { background: var(--navy-deep); }
+.btn-calc:disabled { background: var(--grey); cursor: default; }
+
+/* "Next step" chips inside the results summary strip (stacked) */
+.cx-nextbtns { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.cx-explain { border-color: var(--accent-line); color: var(--navy); background: var(--accent-tint); font-weight: 500; }
+.cx-explain:hover { background: var(--accent-tint-2); }
+.cx-handoff { border-color: var(--accent-line); color: var(--navy); background: transparent; font-weight: 500; }
+.cx-handoff:hover { background: var(--accent-tint); }
+
+/* Compact handoff card for the narrow assistant pane. The full customer-voice
+   message lives inside a collapsible <details>, so the card stays short; the
+   "Send" hop is a preview stub, labelled in-development. */
+.msg.handoff { align-self: stretch; }
+.ho-card {
+  background: var(--surface); border: 1px solid var(--accent-line);
+  border-radius: 8px; padding: 10px 11px; box-shadow: 0 1px 2px rgba(16,24,40,.05);
+}
+.ho-head { font-size: 12px; font-weight: 600; color: var(--navy); margin-bottom: 7px; }
+.ho-lead { font-size: 11.5px; line-height: 1.45; color: var(--ink); margin-bottom: 8px; }
+
+/* Collapsible preview — closed by default to keep the card compact */
+.ho-details { margin-bottom: 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-alt); }
+.ho-details > summary {
+  cursor: pointer; list-style: none; user-select: none;
+  font-size: 11px; font-weight: 500; color: var(--navy); padding: 7px 10px;
+}
+.ho-details > summary::-webkit-details-marker { display: none; }
+.ho-details > summary::before { content: '▸ '; color: var(--ink-soft); }
+.ho-details[open] > summary::before { content: '▾ '; }
+.ho-body {
+  margin: 0; padding: 9px 10px 10px; max-height: 200px; overflow: auto;
+  border-top: 1px solid var(--line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px; line-height: 1.5; color: var(--ink); white-space: pre-wrap;
+  overflow-wrap: anywhere; word-break: normal;   /* wrap long lines but don't split S$ amounts mid-number */
+}
+.ho-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.ho-mail { text-decoration: none; display: inline-flex; align-items: center; }
+.ho-dev { margin-top: 8px; font-size: 10px; color: var(--ink-soft); font-style: italic; }
+
+/* Handed-off state: slim one-line confirmation */
+.ho-card.sent { border-color: #A7D8B0; background: #F5FBF6; }
+.ho-confirm { display: flex; gap: 7px; align-items: center; margin-bottom: 8px;
+  font-size: 11.5px; font-weight: 600; color: #1E7A42; }
+.ho-confirm em { font-weight: 400; font-style: italic; color: var(--ink-soft); font-size: 10px; }
+.ho-check { flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%; background: #2E9E5B; color: #fff; font-size: 10px; }
+
+/* Toast: transient bottom-right banner for the pseudo-send confirmation */
+.toast-host { position: fixed; right: 18px; bottom: 18px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { display: flex; gap: 10px; align-items: flex-start; min-width: 240px; max-width: 340px;
+  background: var(--navy, #1a2b45); color: #fff; padding: 11px 14px; border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(16,24,40,.22);
+  opacity: 0; transform: translateY(8px); transition: opacity .28s, transform .28s; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-check { flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%; background: #2E9E5B; color: #fff; font-size: 11px; margin-top: 1px; }
+.toast-t { font-size: 12.5px; font-weight: 600; }
+.toast-s { font-size: 10.5px; opacity: .82; font-style: italic; margin-top: 2px; }
+
+/* Calculation-steps trace table (inside the collapsible footer) */
+.cx-steps { border-collapse: collapse; width: 100%; font-size: 11px; }
+.cx-steps td { border-top: 1px solid #FDEBC8; padding: 4px 8px 4px 0; vertical-align: top; }
+.cx-steps .cxs-f { color: #A16207; font-family: ui-monospace, monospace; font-size: 10.5px; }
+.cx-steps .cxs-v { text-align: right; font-weight: 600; white-space: nowrap; }
+
+/* MAS 645 financial assets — optional, collapsed block under the details form.
+   Closed and all-zero by default so a customer with nothing to declare sees a
+   single line and their figures are completely unaffected. */
+.cx-assets {
+  margin-top: 12px; border: 1px solid var(--line-strong); border-radius: 6px;
+  background: var(--panel); overflow: hidden;
+}
+.cx-assets > summary {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 16px; cursor: pointer; user-select: none;
+  font-size: 12px; background: var(--surface-alt);
+}
+.cx-assets > summary::-webkit-details-marker { display: none; }
+.cx-assets > summary::before {
+  content: '▸'; color: var(--ink-soft); font-size: 10px; transition: transform .15s;
+}
+.cx-assets[open] > summary::before { transform: rotate(90deg); }
+.cxa-sum-title { font-weight: 700; color: var(--navy); }
+.cxa-sum-hint { color: var(--ink-soft); font-size: 11px; }
+.cxa-sum-val { margin-left: auto; font-weight: 700; color: #15803D; }
+.cx-assets-body { padding: 12px 16px 14px; }
+.cxa-lead { margin: 0 0 10px; font-size: 11.5px; line-height: 1.55; color: var(--ink-soft); }
+.cx-assets-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.cx-assets-table th {
+  text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--ink-soft); font-weight: 700; padding: 5px 8px;
+  border-bottom: 1px solid var(--line-strong);
+}
+.cx-assets-table th:nth-child(2), .cx-assets-table th:nth-child(3) { text-align: center; }
+.cx-assets-table th:last-child { text-align: right; }
+.cx-assets-table td { padding: 5px 8px; border-top: 1px solid var(--line-soft); }
+.cxat-label { color: var(--ink); }
+.cxat-amt {
+  width: 100%; max-width: 130px; padding: 5px 8px; font: inherit; font-size: 11.5px;
+  border: 1px solid var(--line-strong); border-radius: 4px; text-align: right;
+}
+.cxat-pledge { text-align: center; }
+.cxat-out {
+  text-align: right; color: var(--ink-soft); font-size: 10.5px; white-space: nowrap;
+}
+.cxa-total {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line-strong);
+  font-size: 11.5px; color: var(--ink-soft);
+}
+.cxa-total strong { font-size: 14px; color: #15803D; }
+/* Confirmation line on the results card when assets contributed income. */
+.cx-note-645 { background: #F0FDF4; border-bottom-color: #BBF7D0; color: #14532D; }
+
+/* Repayment schedule — its own card below the results card (a deliverable in
+   its own right, not a footnote inside the amber calculation trace). Open by
+   default; the whole header is a click target that collapses it. The table
+   scrolls inside the card so 360 rows never stretch the card or the page. */
+.sched-card { margin-top: 14px; }
+.sched-head { cursor: pointer; user-select: none; }
+.sched-toggle {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: var(--header-fg-soft);
+}
+.sched-card .ar-caret { transition: transform .15s; }
+.sched-card.open .ar-caret { transform: rotate(180deg); }
+.sched-body { display: none; padding: 14px 18px; }
+.sched-card.open .sched-body { display: block; }
+
+.cxa-intro { margin-bottom: 10px; line-height: 1.55; font-size: 11.5px; color: var(--ink-soft); }
+.cxa-scroll {
+  max-height: 340px; overflow: auto;
+  border: 1px solid var(--line-soft); border-radius: 5px; background: var(--panel);
+}
+.cx-amort { border-collapse: collapse; width: 100%; font-size: 11px; }
+.cx-amort thead th {
+  position: sticky; top: 0; z-index: 1;      /* header stays put while scrolling */
+  background: var(--surface-alt); color: var(--ink-soft);
+  text-align: right; font-weight: 700; font-size: 10px; white-space: nowrap;
+  text-transform: uppercase; letter-spacing: .04em;
+  padding: 7px 10px; border-bottom: 1px solid var(--line-strong);
+}
+.cx-amort thead th:first-child { text-align: left; }
+.cx-amort td {
+  padding: 5px 10px; text-align: right; white-space: nowrap;
+  border-top: 1px solid var(--line-soft); font-variant-numeric: tabular-nums;
+}
+.cx-amort tbody tr:nth-child(even) { background: var(--surface); }
+.cx-amort .cxa-m { text-align: left; font-weight: 700; color: var(--navy); }
+.cx-amort .cxa-int { color: #B45309; }       /* interest — the cost */
+.cx-amort .cxa-prin { color: #15803D; }      /* principal — what you get back */
+.cxa-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 11px; color: var(--ink-soft);
+}
+.cxa-more { font-size: 11px; padding: 4px 10px; }
+
+/* BUC progressive payment table — text-led columns (stage, timeframe, funding)
+   left-aligned; only the money columns stay right-aligned. Unlike the 360-row
+   repayment schedule this table is short and finite (13 rows), and its payoff is
+   the LAST rows (TOP and CSC, where the instalment peaks) — so it is shown whole
+   rather than inside a 340px scroller that would hide exactly those rows. */
+.buc-scroll { max-height: none; }
+.cx-buc td { white-space: normal; }
+.cx-buc .buc-stage, .cx-buc .buc-time, .cx-buc .buc-fund { text-align: left; }
+.cx-buc thead th:nth-child(1),
+.cx-buc thead th:nth-child(2),
+.cx-buc thead th:nth-child(5) { text-align: left; }
+.cx-buc .buc-stage { font-weight: 600; color: var(--ink); }
+.cx-buc .buc-time { color: var(--ink-soft); font-size: 10.5px; }
+.cx-buc .buc-fund { font-size: 10.5px; color: var(--ink-soft); }
+.cx-buc .buc-mth { font-weight: 600; }
+/* Cash-funded rows read as "your money"; loan rows as "the bank's". */
+.cx-buc tbody tr.buc-cash .buc-fund { color: #15803D; }
+.cx-buc tbody tr.buc-loan .buc-fund { color: var(--navy); }
+.buc-note {
+  margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line-soft);
+  font-size: 10.5px; line-height: 1.55; color: var(--ink-soft);
+}
+.buc-note a { color: var(--navy); }
+
+/* Disclaimer strip at the bottom of the calculator column */
+.cx-disclaimer {
+  margin-top: 16px; padding: 10px 14px; font-size: 11.5px; line-height: 1.5;
+  color: var(--ink-soft); background: var(--surface-alt);
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+
+/* ── Market rates panel ────────────────────────────────────────────────────
+   Floating + draggable rather than docked: an RM compares rates against the
+   case underneath, so the panel must be movable and must not reflow the
+   three-pane layout. Positioned in px by the drag handler (app.js). */
+.ratespanel {
+  position: fixed; top: 60px; right: 18px; z-index: 60;
+  width: 480px; max-width: calc(100vw - 36px);
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: 0 14px 40px rgba(0,0,0,.18);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ratespanel-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; border-bottom: 1px solid var(--line);
+  background: var(--surface-alt); cursor: grab; user-select: none;
+}
+.ratespanel-head.dragging { cursor: grabbing; }
+.rp-title { font-weight: 600; font-size: 12.5px; color: var(--navy); }
+.rp-stamp { flex: 1; font-size: 11px; color: var(--ink-soft); }
+.rp-btn {
+  background: none; border: 1px solid var(--line); border-radius: 5px;
+  cursor: pointer; font-size: 12px; color: var(--ink-soft);
+  padding: 2px 7px; line-height: 1.5;
+}
+.rp-btn:hover { background: var(--accent-tint); color: var(--navy); }
+.rp-btn.spin { opacity: .5; cursor: default; }
+.rp-body { padding: 10px 12px 12px; max-height: 70vh; overflow-y: auto; }
+
+/* Benchmark strip — the one number an RM quotes most, so it leads. */
+.rp-bench {
+  display: flex; align-items: baseline; gap: 9px;
+  padding: 8px 10px; margin-bottom: 10px;
+  background: var(--accent-tint); border-radius: 6px;
+}
+.rp-bench-val { font-size: 19px; font-weight: 700; color: var(--navy); }
+.rp-bench-lbl { font-size: 11.5px; font-weight: 600; color: var(--ink); }
+.rp-bench-meta { margin-left: auto; font-size: 10.5px; color: var(--ink-soft); }
+
+.rp-tabs { display: flex; gap: 5px; margin-bottom: 7px; }
+.rp-tab {
+  border: 1px solid var(--line); background: var(--panel); border-radius: 5px;
+  padding: 4px 11px; cursor: pointer; font: inherit; font-size: 11.5px;
+  color: var(--ink-soft);
+}
+.rp-tab.is-on { background: var(--navy); border-color: var(--navy); color: #fff; font-weight: 600; }
+
+.rp-table { width: 100%; font-size: 11.5px; overflow-x: auto; }
+.rp-table table { width: 100%; border-collapse: collapse; }
+.rp-table th {
+  text-align: right; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--ink-soft); font-weight: 600;
+  padding: 3px 6px; border-bottom: 1px solid var(--line);
+}
+.rp-table th:first-child, .rp-table td:first-child { text-align: left; }
+.rp-table td { padding: 5px 6px; text-align: right; border-bottom: 1px solid var(--line-soft); }
+.rp-bank { font-weight: 600; color: var(--ink); }
+.rp-sub { display: block; font-size: 10px; color: var(--ink-soft); font-weight: 400; }
+.rp-y1 { font-weight: 700; color: var(--navy); }
+.rp-empty { padding: 14px 4px; color: var(--ink-soft); font-size: 11.5px; }
+
+.rp-trend { margin-top: 11px; border-top: 1px solid var(--line-soft); padding-top: 8px; }
+.rp-trend summary {
+  cursor: pointer; font-size: 11.5px; font-weight: 600; color: var(--ink);
+  list-style: none;
+}
+.rp-trend summary::-webkit-details-marker { display: none; }
+.rp-trend summary::before { content: '▸ '; color: var(--ink-soft); }
+.rp-trend[open] summary::before { content: '▾ '; }
+.rp-trend-sub { font-weight: 400; color: var(--ink-soft); font-size: 10.5px; }
+.rp-spark { padding: 9px 2px 2px; }
+.rp-spark svg { display: block; width: 100%; height: auto; }
+
+.rp-err {
+  margin-top: 9px; padding: 7px 10px; border-radius: 5px;
+  background: #FEF2F2; border: 1px solid #FECACA;
+  font-size: 11px; color: #991B1B; line-height: 1.5;
+}
+
+/* Source attribution strip at the panel foot */
+.rp-src {
+  margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line-soft);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px;
+  font-size: 10.5px; color: var(--ink-soft); line-height: 1.6;
+}
+.rp-src-lbl { font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+/* Keep a link and its description together when the row wraps */
+.rp-src-item { display: inline-flex; align-items: baseline; gap: 4px; }
+.rp-src-item + .rp-src-item::before {
+  content: '·'; color: var(--line); padding-right: 4px;
+}
+.rp-src a { color: var(--navy); font-weight: 600; text-decoration: none; }
+.rp-src a:hover { text-decoration: underline; }
+.rp-src-det { color: var(--ink-soft); }
+
+/* Multi-series legend for the competitor trend */
+.rp-legend {
+  display: flex; flex-wrap: wrap; gap: 3px 10px; padding-top: 6px;
+  font-size: 10px; color: var(--ink-soft);
+}
+.rp-leg { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.rp-leg i { width: 8px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+
+/* Hover targets on the sparklines. The dot grows on hover so it's clear the
+   point is interactive while the native <title> tooltip appears. */
+.rp-spark .rp-pt { cursor: crosshair; }
+.rp-spark .rp-dot { transition: r .1s ease; }
+.rp-spark .rp-pt:hover .rp-dot { r: 4; stroke: #fff; stroke-width: 1.2; }
+/* Benchmark line in the legend reads as a reference, not a package */
+.rp-leg-dash {
+  background: none !important;
+  border-top: 2px dashed #94A3B8; height: 0 !important;
+}
+
+/* ── Package Comparison (RM interest-savings what-if tool) ─────────────────── */
+.cmp-card { margin: 0; }
+.cmp-inputs {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px 20px; padding: 14px 18px; border-bottom: 1px solid var(--line-soft);
+}
+.cmp-f label {
+  display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
+  font-weight: 700; color: var(--ink-soft); margin-bottom: 5px;
+}
+.cmp-step { display: flex; align-items: stretch; gap: 6px; }
+.cmp-step input {
+  flex: 1 1 auto; min-width: 0; padding: 6px 9px; font: inherit; font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line-strong); border-radius: 4px; background: var(--panel);
+}
+.cmp-b {
+  width: 28px; flex: 0 0 28px; cursor: pointer; font-size: 14px; line-height: 1;
+  color: var(--navy); background: var(--surface-alt);
+  border: 1px solid var(--line-strong); border-radius: 4px;
+}
+.cmp-b:hover { background: var(--accent-tint); }
+
+/* The two headline savings figures */
+.cmp-heads {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px; padding: 16px 18px; border-bottom: 1px solid var(--line-soft);
+}
+.cmp-h-k { font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }
+.cmp-h-v { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
+.cmp-h-v.green { color: #15803D; }
+.cmp-h-v.amber { color: var(--amber); }
+
+.cmp-body { padding: 14px 18px 18px; }
+.cmp-sec {
+  margin: 0 0 12px; font-size: 13px; font-weight: 700; color: var(--ink);
+}
+.cmp-scen { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line-soft); }
+.cmp-scen:last-of-type { border-bottom: 0; }
+.cmp-scen h4, .cmp-take h4 {
+  margin: 0 0 8px; font-size: 12.5px; font-weight: 700; color: var(--navy);
+}
+.cmp-scen ul, .cmp-take ul { margin: 0; padding-left: 18px; }
+.cmp-scen li, .cmp-take li { font-size: 11.5px; line-height: 1.65; color: var(--ink); }
+.cmp-scen ul ul { margin: 4px 0 8px; }
+.cmp-scen ul ul li { color: var(--ink-soft); }
+.cmp-take {
+  padding: 12px 14px; background: var(--surface-alt);
+  border: 1px solid var(--line-soft); border-radius: 5px;
+}
+
+/* ── Responsive: narrow screens (laptop / tablet) ─────────────────────────
+   The stylesheet had no media queries at all, so a narrow window squeezed the
+   400px Assistant panel against the workspace until both were unusable. These
+   only ADD narrow-screen behaviour; the wide-screen layout above is untouched.
+
+   Order matters: each block is narrower than the last, so later rules win. */
+
+/* Laptop — give the workspace room back by trimming the Assistant panel. */
+@media (max-width: 1400px) {
+  :root { --copilot-w: 340px; }
+}
+
+/* Small laptop — the side-by-side split stops paying for itself. */
+@media (max-width: 1150px) {
+  :root { --copilot-w: 300px; }
+  /* Two per row, not the 3+1 orphan that auto-fit lands on at this width. */
+  .cx-intents { grid-template-columns: repeat(2, 1fr); }
+  /* Step labels lose the wide letter-spacing before they start wrapping. */
+  .cx-step { font-size: 12.5px; letter-spacing: .02em; }
+  .workspace { padding: 16px 16px; }
+}
+
+/* Tablet / portrait — stack: workspace on top, Assistant below it. Side-by-side
+   below ~900px leaves neither pane wide enough to read. */
+@media (max-width: 900px) {
+  /* .layout is the flex row holding workspace + Assistant, and it is pinned to
+     calc(100vh - 56px). Stacked, that fixed height would squash both panes, so it
+     becomes a min-height and the page scrolls instead. */
+  .layout { flex-direction: column; height: auto; min-height: calc(100vh - 56px); }
+  .copilot {
+    width: auto; border-left: none; border-top: 1px solid var(--line);
+    max-height: 55vh;
+  }
+  /* The cap is what keeps cards from stretching on a WIDE screen; on a narrow one
+     it must not become a floor, so hand the width back to the viewport. */
+  .cx-panel > .cx-lead,
+  .cx-intents,
+  .cx-disclaimer,
+  .cx-panel > .cx-form-card,
+  .cx-panel > .cx-assets,
+  .cx-panel > .planner,
+  .cx-panel > .cx-nav { max-width: none; margin-inline: 0; }
+  /* Keep the step labels: hiding them left a bare progress line with nothing to
+     say which step you are on. Only the CURRENT one is shown, so three labels do
+     not have to share a narrow row. */
+  .cx-step { display: none; }
+  .cx-step.active { display: block; text-align: left; padding-left: 0; }
+  .cx-progress { margin: 8px 0 20px; }
+}
+
+/* Phone — single column throughout. */
+@media (max-width: 640px) {
+  .cx-intents { grid-template-columns: 1fr; }
+  .cx-nav { flex-direction: column; }
+  .cx-nav .btn-calc, .cx-back { width: 100%; }
+  .workspace { padding: 14px 12px; }
+}

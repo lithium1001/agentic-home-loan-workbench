@@ -1,0 +1,11 @@
+applicant_id,fake_nric_fin,full_name,email,mobile_number,date_of_birth,age,gender,race,registered_address,residential_status,highest_education_level,citizenship,singpass_verified,singpass_pull_date
+APP0001,*********,Cassidy Flores,latoyarasmussen@example.com,91533224,1987-10-12,38,Male,Chinese,"Blk 31 Bukit Timah Rd 7, #08-130, Singapore 731262",Resident,Post-Secondary,Singapore Citizen,True,2026-05-30
+APP0002,*********,Joshua Ramirez IV,poncetimothy@example.net,96708456,1972-07-31,53,Male,Chinese,"Blk 285 Clementi Ave 7, #25-087, Singapore 207175",Resident,Secondary,Singapore Citizen,True,2026-06-28
+APP0003,*********,Dr. Erica Rosales,emilycochran@example.com,97067228,1989-12-11,36,Male,Chinese,"Blk 592 Jurong West St 23, #03-012, Singapore 793384",Resident,Post-Secondary,Singapore PR,True,2026-06-19
+APP0004,*********,Steven Mckenzie,pooledaniel@example.com,95479144,1967-12-07,58,Female,Chinese,"Blk 719 Bedok North Ave 21, #03-156, Singapore 765822",Resident,Degree,Singapore Citizen,True,2026-06-28
+APP0005,*********,Richard Hunter,fhamilton@example.org,97730428,2001-01-06,25,Male,Malay,"Blk 275 Bukit Timah Rd 7, #30-146, Singapore 429963",Resident,Diploma,Singapore Citizen,True,2026-06-28
+APP0006,*********,Kurt Hill,dcastro@example.com,98187926,1983-08-15,42,Female,Malay,"Blk 920 Toa Payoh Lor 13, #12-057, Singapore 245051",Resident,Secondary,Employment Pass Holder,True,2026-05-31
+APP0007,*********,Susan Henry,katelyn80@example.com,98852574,1974-09-29,51,Female,Chinese,"Blk 542 Tampines St 18, #28-003, Singapore 813328",Resident,Degree,Singapore Citizen,True,2026-06-22
+APP0008,*********,Jonathan Miller,becky86@example.net,95418934,2005-05-10,21,Male,Indian,"Blk 996 Punggol Field 25, #06-130, Singapore 211579",Resident,Post-Secondary,Singapore Citizen,True,2026-06-20
+APP0009,*********,Franklin Mcintosh,nramirez@example.net,99197443,1970-09-03,55,Male,Chinese,"Blk 20 Bukit Timah Rd 30, #12-079, Singapore 351083",Resident,Degree,Singapore Citizen,True,2026-06-04
+APP0010,*********,Anne Garner,erios@example.com,98099076,1973-02-23,53,Male,Chinese,"Blk 988 Jurong West St 30, #18-194, Singapore 823378",Resident,Diploma,Employment Pass Holder,True,2026-06-19

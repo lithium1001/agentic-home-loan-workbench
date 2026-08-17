@@ -1,0 +1,49 @@
+# Agentic Home Loan Workbench — FastAPI web app dependencies. Versions PINNED (==)
+# to the exact set this app was developed and verified against (2026-07-13) so
+# deploys are reproducible and don't break on a surprise upstream bump. No DB /
+# disk persistence, so nothing else is required.
+#
+# Two groups: the direct imports, plus the transitive packages in the
+# langchain/pydantic stacks that historically cause the version-incompatibility
+# pain — pinned explicitly so a loose resolver can't drift them.
+
+# ── web server ──────────────────────────────────────────────────────────────
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
+starlette==1.2.1
+pydantic==2.12.5
+pydantic-core==2.41.5
+typing-extensions==4.15.0
+
+# ── agent / LLM stack ───────────────────────────────────────────────────────
+langchain-core==1.4.0
+langchain-openai==1.2.2
+langgraph==1.2.4
+langgraph-checkpoint==4.1.1
+langgraph-prebuilt==1.1.0
+langgraph-sdk==0.4.2
+langsmith==0.8.9
+openai==2.26.0
+tiktoken==0.13.0
+tenacity==8.2.3
+httpx==0.28.1
+
+# ── data / misc ─────────────────────────────────────────────────────────────
+# numpy MUST stay <2: pandas 2.1.1's C extensions are compiled against the
+# numpy 1.x ABI. On a host with numpy 2.x preinstalled (e.g. Colab) importing
+# pandas dies with "numpy.dtype size changed ... binary incompatibility". Pinned
+# to the version pandas 2.1.1 was built against so the ABI matches everywhere.
+numpy==1.26.4
+pandas==2.1.1
+python-dotenv==1.2.2
+urllib3==1.26.9
+
+# ── policy RAG (search_policy tool over the t&c/ PDFs) ───────────────────────
+# BM25 sparse retrieval — no embeddings / API. pypdf extracts the PDF text.
+rank_bm25==0.2.2
+pypdf==6.13.2
+
+# ── letter PDF (draft_letter tool → utils/letter_pdf.py) ─────────────────────
+# Imported at module top level, and letter_pdf sits on the tools → graph → server
+# import chain, so the app will not even start without it.
+reportlab==4.5.1

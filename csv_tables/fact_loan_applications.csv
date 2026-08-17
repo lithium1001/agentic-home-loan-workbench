@@ -1,0 +1,11 @@
+application_id,applicant_id,application_date,loan_type,application_status,property_type,property_value_estimated,no_outstanding_home_loans,no_sg_properties_owned,monthly_fixed_income,monthly_variable_income,monthly_rental_income,annual_bonus,annual_trade_income,monthly_car_loan,monthly_other_commitments,cash_available,cpf_oa_available,interest_rate_pct
+LA0001,APP0001,2026/5/20,New Purchase,Submitted,Private Residential,1792000,0,1,10200,1500,0,11500,0,0,0,511000,86780.42,1.31
+LA0002,APP0002,2026/5/13,New Purchase,Submitted,Executive Condominium,1600000,1,2,9900,900,0,37300,26500,0,0,900000,72155.49,1.3
+LA0003,APP0003,2026/4/15,New Purchase,Submitted,HDB Flat,700000,1,1,10700,1000,2200,42400,0,1300,0,155000,39992.41,1.3
+LA0004,APP0004,2026/6/16,New Purchase,Submitted,HDB Flat,569000,1,1,6900,1000,0,19000,46600,1300,0,126000,47754.02,1.34
+LA0005,APP0005,2026/4/14,Refinancing,Pending Docs,Private Residential,1665000,1,1,5600,800,3000,11200,0,0,0,435000,93169.57,1.29
+LA0006,APP0006,2026/1/17,Refinancing,In Review,Executive Condominium,1600000,0,1,14800,1400,2900,10700,0,0,0,414000,58296.1,1.35
+LA0007,APP0007,2026/5/13,Refinancing,Approved,Executive Condominium,839000,1,1,7900,500,0,16300,0,0,0,171000,84273.17,1.36
+LA0008,APP0008,2026/2/21,New Purchase,In Review,Executive Condominium,1600000,1,1,21600,2600,0,47600,0,1800,0,424000,73679.27,1.36
+LA0009,APP0009,2026/1/4,Refinancing,In Review,HDB Flat,700000,0,2,8800,1600,2400,30400,17400,1000,600,334000,101515.97,1.31
+LA0010,APP0010,2026/1/27,New Purchase,Pending Docs,Private Residential,1591000,0,2,11000,1000,0,30700,0,0,800,969000,47948.38,1.36

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentic Home Loan Workbench</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=14" />
+</head>
+<body>
+  <!-- ── Top bar ─────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">✦</span>
+      <div class="brand-text">
+        <strong>Agentic Home Loan Workbench</strong>
+        <span class="brand-sub">Singapore Home Loans</span>
+      </div>
+    </div>
+
+    <button class="switch-btn" id="ratesBtn" style="margin-left:auto" title="Market rates — MAS SORA & competitor packages">📈 Market rates</button>
+
+    <a class="switch-btn" href="/" title="Back to role selection">⇄ Switch role</a>
+
+    <div class="case-switcher" style="margin-left:0">
+      <div class="case-current" id="caseCurrent">
+        <div class="case-label">Current Case</div>
+        <div class="case-name" id="currentName">—</div>
+        <div class="case-meta" id="currentMeta"></div>
+      </div>
+      <button class="switch-btn" id="switchBtn">Switch ›</button>
+      <div class="case-picker" id="casePicker" hidden>
+        <div class="picker-head">
+          <span>Select Case</span>
+          <button class="picker-close" id="pickerClose">✕</button>
+        </div>
+        <div class="picker-list" id="pickerList"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- ── Center: structured case workspace (the planner). The nav header has
+         two rows: the workflow track selector on top, then the horizontal stage
+         path (Salesforce-path style) below it; there is no left rail. ───────── -->
+    <main class="center">
+      <div class="workspace-head">
+        <div class="wf-switch" id="wfSwitch"></div>
+        <ol class="stagebar" id="stages"></ol>
+      </div>
+
+      <!-- Slim context bar (Step guidance before / completion note after) -->
+      <div class="context-bar" id="contextBar"></div>
+
+      <div class="workspace" id="workspace">
+        <!-- Case header: who this case is about (avatar + name + CBS) -->
+        <section class="case-head" id="borrowerStrip"></section>
+
+        <!-- Loan Scenario calculator card (KPIs from calculate_loan; the
+             assistant's reasoning + Approve/Adjust fold into its footer once
+             assessed — there is no separate Assessment Result card). -->
+        <section class="planner" id="planner"></section>
+
+        <!-- Case information — one slim full-width band per category (Borrower /
+             Property / Income & Affordability / Documents / Flags); fields flow
+             horizontally inside each band and wrap on narrow windows -->
+        <section class="info-rows" id="wsGrid"></section>
+      </div>
+
+      <!-- Package Comparison workspace (its own workflow track, beside Reprice).
+           A deterministic what-if tool: the RM types the loan's numbers and gets
+           interest-savings scenarios straight from utils/calculator — no LLM, so
+           it recalculates instantly and the figures cannot drift. -->
+      <div class="workspace" id="compareWorkspace" hidden></div>
+    </main>
+
+    <!-- ── Right: Assistant — the MAS conversation surface (thinking chain,
+         answers, HITL gate). A full pane, sized as the assistant sidebar. ── -->
+    <aside class="copilot" id="copilot">
+      <div class="copilot-head">
+        <span class="analysis-mark">✦</span>
+        <span class="analysis-title">Assistant</span>
+        <!-- Clears this lane's conversation history. The transcript only grows, so a
+             long case can outgrow the model's context window and block further
+             messages; this is the way back without restarting the server. -->
+        <button class="log-link clear-link" id="clearBtn"
+                title="Clear this conversation (case data is kept)">Clear</button>
+        <a href="#" class="log-link" id="logLink">Activity log ›</a>
+      </div>
+
+      <div class="chat" id="chat"></div>
+
+      <!-- HITL Approve / Revise gate (hidden until a draft arrives) -->
+      <div class="hitl" id="hitlRow" hidden>
+        <span class="hitl-label">Draft ready — review before sending.</span>
+        <button class="btn btn-approve" id="approveBtn">Approve</button>
+        <button class="btn btn-revise" id="reviseBtn">Revise</button>
+        <input class="revise-input" id="reviseInput" placeholder="Describe what to revise…" hidden />
+        <button class="btn btn-revise" id="reviseSend" hidden>Send revision</button>
+        <button class="btn btn-cancel" id="reviseCancel" hidden>Cancel</button>
+      </div>
+
+      <div class="composer" id="composer">
+        <div class="chips" id="chips"></div>
+        <div class="composer-row">
+          <textarea class="input" id="input" rows="1" placeholder="Ask the assistant…"></textarea>
+          <button class="btn btn-send" id="sendBtn">↑</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Activity log (slide-over, toggled from the Assistant header) ── -->
+    <aside class="logpane" id="logPane" hidden>
+      <div class="logpane-head">
+        <span>Activity log</span>
+        <button class="picker-close" id="logClose">✕</button>
+      </div>
+      <div class="logpane-body" id="logBody"></div>
+    </aside>
+  </div>
+
+  <!-- ── Market rates (draggable floating panel, toggled from the top bar) ──
+       Floats above the workspace so an RM can drag it aside and keep comparing
+       against the case underneath; never reflows the three-pane layout. -->
+  <section class="ratespanel" id="ratesPanel" hidden>
+    <header class="ratespanel-head" id="ratesDrag">
+      <span class="rp-title">Market Rates</span>
+      <span class="rp-stamp" id="ratesStamp"></span>
+      <button class="rp-btn" id="ratesRefresh" title="Re-fetch from MAS + competitors">⟳</button>
+      <button class="picker-close" id="ratesClose">✕</button>
+    </header>
+
+    <div class="rp-body">
+      <div class="rp-bench" id="ratesBench"></div>
+
+      <div class="rp-tabs" id="ratesTabs">
+        <button class="rp-tab is-on" data-cat="fixed">Fixed</button>
+        <button class="rp-tab" data-cat="floating">Floating</button>
+      </div>
+      <div class="rp-table" id="ratesTable"></div>
+
+      <details class="rp-trend">
+        <summary>SORA trend <span class="rp-trend-sub" id="ratesTrendSub"></span></summary>
+        <div class="rp-spark" id="ratesSpark"></div>
+      </details>
+
+      <details class="rp-trend">
+        <summary>Competitor trend <span class="rp-trend-sub" id="ratesBankSub"></span></summary>
+        <!-- follows the Fixed/Floating tab above — the two are different units -->
+
+        <div class="rp-spark" id="ratesBankSpark"></div>
+      </details>
+
+      <div class="rp-err" id="ratesErr" hidden></div>
+
+      <!-- Provenance: which figure came from where -->
+      <footer class="rp-src" id="ratesSrc"></footer>
+    </div>
+  </section>
+
+  <script src="/app.js?v=7"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Loan Explorer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=1" />
+</head>
+<body>
+  <!-- ── Top bar ─────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">✦</span>
+      <div class="brand-text">
+        <strong>Home Loan Explorer</strong>
+        <span class="brand-sub">See what you could afford — instantly</span>
+      </div>
+    </div>
+    <div class="role-switch">
+      <a class="switch-btn" href="/" title="Back to role selection">⇄ Switch role</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- ── Center: guided affordability wizard (DBS-marketplace style).
+         Every number comes from the deterministic calculator API — no LLM
+         touches this panel. ─────────────────────────────────────────── -->
+    <main class="center">
+      <div class="workspace cx-wizard">
+
+        <!-- Step header: three labels over a progress line with a house marker -->
+        <div class="cx-steps-head" id="stepsHead">
+          <button class="cx-step active" data-step="1">Let's get started</button>
+          <button class="cx-step" data-step="2">Tell us more about yourself</button>
+          <button class="cx-step" data-step="3">Your results</button>
+        </div>
+        <div class="cx-progress">
+          <div class="cx-progress-fill" id="progressFill"></div>
+          <span class="cx-progress-icon" id="progressIcon">⌂</span>
+        </div>
+
+        <!-- STEP 1 — choose how to start -->
+        <section class="cx-panel" id="panelIntent">
+          <h2 class="cx-lead">Find out how much you could afford by choosing one of the options below</h2>
+          <div class="cx-intents">
+            <button class="cx-intent" data-mode="price">
+              <div class="cxi-title">Property Price</div>
+              <div class="cxi-sub">I have a price in mind for my future home</div>
+            </button>
+            <button class="cx-intent" data-mode="instalment">
+              <div class="cxi-title">Monthly Instalment</div>
+              <div class="cxi-sub">I know how much I am prepared to pay monthly</div>
+            </button>
+            <button class="cx-intent" data-mode="downpayment">
+              <div class="cxi-title">Downpayment</div>
+              <div class="cxi-sub">I have set aside a downpayment for my purchase</div>
+            </button>
+            <button class="cx-intent" data-mode="explore">
+              <div class="cxi-title">I'm still exploring</div>
+              <div class="cxi-sub">I want to see my maximum loan amount</div>
+            </button>
+          </div>
+        </section>
+
+        <!-- STEP 2 — details form (mode-specific fields toggle) -->
+        <section class="cx-panel" id="panelForm" hidden>
+          <h2 class="cx-lead" id="formLead">Tell us more about yourself</h2>
+          <div class="info-row cx-form-card">
+            <div class="ic-title" id="formTitle">About you</div>
+            <div class="cx-form">
+              <div class="cxf"><label>Age</label><input id="fAge" type="number" min="21" max="70" value="35" /></div>
+              <div class="cxf"><label>Fixed income / mo (S$)</label><input id="fFixed" type="number" min="0" step="100" value="8000" /></div>
+              <div class="cxf"><label>Variable income / mo (S$)</label><input id="fVar" type="number" min="0" step="100" value="0" /></div>
+              <div class="cxf"><label>Residency</label>
+                <select id="fNat">
+                  <option>Singapore Citizen</option>
+                  <option>Permanent Resident</option>
+                  <option>Foreigner</option>
+                </select>
+              </div>
+              <div class="cxf"><label>Property type</label>
+                <select id="fProp"><option>Private</option><option>HDB</option></select>
+              </div>
+              <div class="cxf"><label>Properties owned now</label><input id="fOwned" type="number" min="0" max="5" value="0" /></div>
+              <div class="cxf"><label>Existing home loans</label><input id="fLoans" type="number" min="0" max="5" value="0" /></div>
+              <div class="cxf"><label>Car loan / mo (S$)</label><input id="fCar" type="number" min="0" step="50" value="0" /></div>
+              <div class="cxf"><label>Other debts / mo (S$)</label><input id="fOther" type="number" min="0" step="50" value="0" /></div>
+              <div class="cxf"><label>Rate package</label><select id="fRate"></select></div>
+              <div class="cxf mode-f mode-price"><label>Target property price (S$)</label><input id="fPrice" type="number" min="100000" step="10000" value="1200000" /></div>
+              <div class="cxf mode-f mode-instalment" hidden><label>Monthly instalment budget (S$)</label><input id="fBudget" type="number" min="500" step="100" value="3000" /></div>
+              <div class="cxf mode-f mode-instalment mode-downpayment" hidden><label>Cash + CPF set aside (S$)</label><input id="fCash" type="number" min="0" step="10000" value="300000" /></div>
+            </div>
+          </div>
+
+          <!-- MAS Notice 645: eligible financial assets counted as income.
+               Collapsed and all-zero by default, so a customer with no assets to
+               declare never sees this complexity and their figures are unaffected. -->
+          <details class="cx-assets" id="assetsBox">
+            <summary>
+              <span class="cxa-sum-title">Add financial assets (optional)</span>
+              <span class="cxa-sum-hint">Savings and investments can raise the income we count</span>
+              <span class="cxa-sum-val" id="assetsSummary"></span>
+            </summary>
+            <div class="cx-assets-body">
+              <p class="cxa-lead">
+                Under MAS Notice 645 your eligible assets can be recognised as an income
+                stream, spread over 48 months. Pledging them to the bank for at least
+                4 years reduces the deduction applied.
+              </p>
+              <table class="cx-assets-table">
+                <thead>
+                  <tr><th>Eligible financial asset</th><th>Amount (S$)</th>
+                      <th>Pledged &ge; 4 years</th><th>Monthly income</th></tr>
+                </thead>
+                <tbody id="assetsRows"></tbody>
+              </table>
+              <div class="cxa-total">
+                <span>Recognised monthly income</span>
+                <strong id="assetsTotal">S$0</strong>
+              </div>
+            </div>
+          </details>
+          <div class="cx-nav">
+            <button class="btn cx-back" id="backBtn">‹ Back</button>
+            <button class="btn btn-calc" id="calcBtn">Show my results ›</button>
+          </div>
+        </section>
+
+        <!-- STEP 3 — deterministic results -->
+        <section class="cx-panel" id="panelResults" hidden>
+          <div class="planner" id="cxResults"></div>
+          <div class="cx-nav">
+            <button class="btn cx-back" id="adjustBtn">‹ Adjust my details</button>
+            <button class="btn cx-back" id="restartBtn">Start over</button>
+          </div>
+        </section>
+
+        <div class="cx-disclaimer">
+          All figures are <strong>indicative estimates</strong> computed under MAS rules (TDSR 55% ·
+          stress rate 4% · LTV limits · BSD/ABSD). They are not a loan offer; actual approval and
+          pricing are subject to the bank's credit assessment.
+        </div>
+      </div>
+    </main>
+
+    <!-- ── Right: Assistant — restricted customer chat (calculator + T&C only) ── -->
+    <aside class="copilot" id="copilot">
+      <div class="copilot-head">
+        <span class="analysis-mark">✦</span>
+        <span class="analysis-title">Assistant</span>
+      </div>
+
+      <div class="chat" id="chat"></div>
+
+      <div class="composer">
+        <div class="chips" id="chips"></div>
+        <div class="composer-row">
+          <textarea class="input" id="input" rows="1" placeholder="Ask about loan terms, fees, or your numbers…"></textarea>
+          <button class="btn btn-send" id="sendBtn">↑</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="/customer.js?v=1"></script>
+</body>
+</html>

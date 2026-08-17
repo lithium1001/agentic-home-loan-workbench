@@ -1,0 +1,6 @@
+{
+  "name": "reprice_retention",
+  "description": "Stage REPRICE: when a borrower wants to reprice or refinance away to a competitor, compares our package against the competitor's quoted rate and produces a retention recommendation plus a talking-points script for the RM",
+  "label": "🤝 Reprice & Retention Agent",
+  "color": "#b45309"
+}

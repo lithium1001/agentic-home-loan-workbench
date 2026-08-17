@@ -1,0 +1,3 @@
+package_id,package_name,rate_type,indicative_rate_pct,reference_rate,spread_pct,lock_in_years,notes
+PKG_FIX2,2-Year Fixed,Fixed,1.40,,,2,Rate certainty for 2 years; reverts to floating after lock-in. Indicative private-property fixed rate (Jun 2026).
+PKG_FLT,SORA Floating,Floating,1.28,3M Compounded SORA,0.20,0,"Tracks 3M Compounded SORA + 0.20% spread; re-prices every 3 months. No lock-in. For a specific case the live floating rate is the application's own interest_rate_pct (SORA + spread, set when the case data was generated); this indicative_rate_pct is just the catalog default."

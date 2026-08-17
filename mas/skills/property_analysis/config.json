@@ -1,0 +1,6 @@
+{
+  "name": "property_analysis",
+  "description": "Analyses the property being purchased: LTV check against MAS rules, OTP validity, CPF OA usage, and cash outlay consistency",
+  "label": "🏠 Property Analysis Agent",
+  "color": "#7c3aed"
+}

@@ -1,0 +1,11 @@
+bank_record_id,applicant_id,fake_nric_fin,query_date,has_bank_account,bank_account_number,bank_account_type,bank_account_status,bank_account_since_year,bank_avg_3m_balance,bank_salary_crediting,cbs_credit_score,cbs_risk_grade,total_debt_outstanding,no_active_credit_lines,bankruptcy_flag,default_flag,actual_income_verified,income_verification_src
+BNK-APP0001,APP0001,*********,2026-05-20,False,,,,,,False,744,CC,0.0,5,False,False,12560.78,NOA
+BNK-APP0002,APP0002,*********,2026-05-13,False,,,,,,False,725,CC,0.0,6,False,False,15560.21,Payslip
+BNK-APP0003,APP0003,*********,2026-04-15,False,,,,,,False,746,CC,50700.0,1,False,False,17562.51,Payslip
+BNK-APP0004,APP0004,*********,2026-06-16,False,,,,,,False,766,BB,37700.0,6,False,False,12737.03,CPF+Payslip
+BNK-APP0005,APP0005,*********,2026-04-14,True,8366752545,Savings,Dormant,2004.0,24454.07,True,709,CC,0.0,2,False,False,9888.57,CPF+Payslip
+BNK-APP0006,APP0006,*********,2026-01-17,True,8156149784,Savings,Active,2019.0,9162.51,True,730,CC,0.0,4,False,False,20205.73,Payslip
+BNK-APP0007,APP0007,*********,2026-05-13,False,,,,,,False,782,BB,0.0,3,False,False,9590.61,NOA
+BNK-APP0008,APP0008,*********,2026-02-21,True,0607159696,KrisFlyer Account,Active,2012.0,4107.63,True,774,BB,97200.0,8,False,False,28167.41,CPF
+BNK-APP0009,APP0009,*********,2026-01-04,True,6816453521,Savings,Active,2006.0,135982.49,True,695,DD,25800.0,3,False,False,16677.11,NOA
+BNK-APP0010,APP0010,*********,2026-01-27,True,7799799552,KrisFlyer Account,Active,2014.0,95076.38,False,739,CC,6400.0,1,False,False,14083.0,CPF+Payslip

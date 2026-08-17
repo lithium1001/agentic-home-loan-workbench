@@ -1,0 +1,6 @@
+{
+  "name": "policy_product",
+  "description": "Stage LO: selects the loan product and pricing for an applicant, computes monthly instalment and TDSR headroom at the chosen rate, and emits the execution payload for compliance and drafting",
+  "label": "📋 Policy & Product Agent",
+  "color": "#0d9488"
+}

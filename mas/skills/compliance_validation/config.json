@@ -1,0 +1,6 @@
+{
+  "name": "compliance_validation",
+  "description": "MAS regulatory compliance checks: TDSR rule, LTV cap, CBS credit standing, income doc completeness, property doc completeness",
+  "label": "⚖️ Compliance Validation Agent",
+  "color": "#dc2626"
+}

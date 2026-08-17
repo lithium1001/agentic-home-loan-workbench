@@ -1,0 +1,6 @@
+{
+  "name": "orchestrator",
+  "description": "Routes RM queries to the correct specialist agent based on intent and loan processing stage (IPA / LO)",
+  "label": "🧭 Orchestrator",
+  "color": "#f59e0b"
+}

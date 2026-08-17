@@ -1,0 +1,6 @@
+{
+  "name": "document_drafting",
+  "description": "Global shared service: drafts the customer-facing letter from a compliance-cleared payload — an IPA letter at the IPA stage or a Letter of Offer at the LO stage",
+  "label": "📝 Document Drafting Agent",
+  "color": "#65a30d"
+}

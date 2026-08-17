@@ -1,0 +1,6 @@
+{
+  "name": "customer_assistant",
+  "description": "Customer self-service lane: answers a prospective borrower's own affordability questions via the deterministic calculator and looks up product T&C via policy search. Deliberately restricted — no case data access, no advice, no drafting.",
+  "label": "👤 Customer Assistant",
+  "color": "#0e7490"
+}

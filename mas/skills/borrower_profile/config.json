@@ -1,0 +1,6 @@
+{
+  "name": "borrower_profile",
+  "description": "Answers questions about a specific loan applicant: profile, income, CPF, credit score, TDSR, LTV, risk flags",
+  "label": "👤 Borrower Profile Agent",
+  "color": "#2563eb"
+}

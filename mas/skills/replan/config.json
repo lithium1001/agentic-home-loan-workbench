@@ -1,0 +1,6 @@
+{
+  "name": "replan",
+  "description": "Sub-orchestrator: after the RM rejects a draft at the HITL gate, reads the revision feedback and decides whether to recompute (with overridden inputs), re-draft, or refuse an unchangeable parameter",
+  "label": "🔁 Replan",
+  "color": "#8b5cf6"
+}

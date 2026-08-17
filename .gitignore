@@ -1,0 +1,45 @@
+# Secrets / environment variables
+.env
+.env.*
+*.env
+# ...except the placeholder template, which documents the two LLM routes and
+# the variables each one needs. It must be committed to be of any use.
+# Anchored to the exact path: a bare "!.env.example" is matched but overridden
+# by the ".env.*" rule above, so it silently stays ignored.
+!/mas/.env.example
+
+# Redundant / scratch folder
+redundant/
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Claude Code — assistant scaffolding, not part of the runnable project.
+# (Long-term memory lives outside the repo, in ~/.claude/projects/<slug>/memory/.)
+.claude/
+CLAUDE.md
+**/CLAUDE.md
+
+# Coursework deliverables (reports, slides, proposal) — not needed to run the app
+documents/
+
+# Run artifacts (runs.csv etc) — runtime data, not source
+artifacts/
+mas/eval/_test_runs.csv

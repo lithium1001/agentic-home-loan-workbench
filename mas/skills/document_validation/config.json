@@ -1,0 +1,6 @@
+{
+  "name": "document_validation",
+  "description": "Global shared service: checks income and property documents for completeness, OCR confidence, and verification status; returns a per-document checklist",
+  "label": "📄 Document Validation Agent",
+  "color": "#0891b2"
+}
