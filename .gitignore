@@ -43,3 +43,7 @@ documents/
 # Run artifacts (runs.csv etc) — runtime data, not source
 artifacts/
 mas/eval/_test_runs.csv
+
+# Usage tracking (visits.csv, customer_inputs.csv) — written at runtime, and
+# visits.csv records client IPs. Never commit it.
+usage_data/

@@ -1,11 +1,9 @@
-# Agentic Home Loan Workbench — FastAPI web app dependencies. Versions PINNED (==)
-# to the exact set this app was developed and verified against (2026-07-13) so
-# deploys are reproducible and don't break on a surprise upstream bump. No DB /
-# disk persistence, so nothing else is required.
+# Agentic Home Loan Workbench — dependencies for the FastAPI web app.
 #
-# Two groups: the direct imports, plus the transitive packages in the
-# langchain/pydantic stacks that historically cause the version-incompatibility
-# pain — pinned explicitly so a loose resolver can't drift them.
+# Install with:  py -m pip install -r mas/requirements.txt
+#
+# Versions are pinned (==) to the set this app was verified against, so a fresh
+# clone installs a combination known to work. No database — nothing else needed.
 
 # ── web server ──────────────────────────────────────────────────────────────
 fastapi==0.136.3
@@ -28,22 +26,20 @@ tiktoken==0.13.0
 tenacity==8.2.3
 httpx==0.28.1
 
-# ── data / misc ─────────────────────────────────────────────────────────────
-# numpy MUST stay <2: pandas 2.1.1's C extensions are compiled against the
-# numpy 1.x ABI. On a host with numpy 2.x preinstalled (e.g. Colab) importing
-# pandas dies with "numpy.dtype size changed ... binary incompatibility". Pinned
-# to the version pandas 2.1.1 was built against so the ABI matches everywhere.
+# ── data ────────────────────────────────────────────────────────────────────
+# numpy MUST stay <2: pandas 2.1.1 is compiled against the numpy 1.x ABI, and on
+# a host with numpy 2.x preinstalled (e.g. Colab) importing pandas fails with
+# "numpy.dtype size changed ... binary incompatibility".
 numpy==1.26.4
 pandas==2.1.1
 python-dotenv==1.2.2
 urllib3==1.26.9
 
-# ── policy RAG (search_policy tool over the t&c/ PDFs) ───────────────────────
-# BM25 sparse retrieval — no embeddings / API. pypdf extracts the PDF text.
+# ── policy RAG — the search_policy tool over the t&c/ PDFs ──────────────────
+# BM25 sparse retrieval, so no embeddings or extra API key. pypdf reads the PDFs.
 rank_bm25==0.2.2
 pypdf==6.13.2
 
-# ── letter PDF (draft_letter tool → utils/letter_pdf.py) ─────────────────────
-# Imported at module top level, and letter_pdf sits on the tools → graph → server
-# import chain, so the app will not even start without it.
+# ── letter PDF — the draft_letter tool ──────────────────────────────────────
+# Imported at startup, so the app will not launch without it.
 reportlab==4.5.1

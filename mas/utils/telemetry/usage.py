@@ -11,9 +11,10 @@ the two files answers "of the people who opened the tool, how many actually ran 
 calculation" — a conversion rate, not just two disconnected counts.
 
 Separate from ``artifacts/runs.csv`` on purpose. That file is operational KPIs of
-the agent graph (latency, tokens, routing) and is gitignored as a run artifact.
-This is adoption data about *people*, it lives in its own folder, and it IS
-committed to git so the history travels with the repo.
+the agent graph (latency, tokens, routing). This is adoption data about *people*,
+so it lives in its own folder — and it is gitignored too: ``visits.csv`` records
+client IPs, which must never reach a shared repo. Collect it, analyse it locally,
+and export only aggregates.
 
 WHAT ``cid`` ACTUALLY MEASURES
 ------------------------------
