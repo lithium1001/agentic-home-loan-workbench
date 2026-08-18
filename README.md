@@ -6,6 +6,8 @@ Eight tool-using agents plus an orchestrator and a replan sub-orchestrator share
 
 The app serves **two audiences** from one graph: a customer-facing self-service explorer, and the RM workbench.
 
+![The landing page — one agentic system, two workspaces](images/workbench_frontpage_blurred.png)
+
 ## Setup
 
 Requires **Python 3.10 or newer** (on Windows invoke it as `py`, not `python.exe`) and access to an LLM — either an OpenRouter key or an internal OpenAI-compatible gateway.
@@ -49,7 +51,13 @@ Open <http://127.0.0.1:8000>. The landing page asks which workspace you want:
 - **`/customer`** — a self-service explorer. Fill in the form, click *Show my results*, and the MAS calculator returns what the customer can borrow, the downpayment, and the monthly instalment. Hard-scoped to the customer assistant: it cannot reach case data.
 - **`/rm`** — the RM workbench. Pick a case (`APP0001`–`APP0010`) from the top-bar switcher, choose a stage (IPA / LO / REPRICE), and chat. The left rail shows deal progress, a priced loan summary, and a per-stage document checklist; the right rail streams the assistant's reasoning and the audit log.
 
-Ask for a full IPA and the graph runs borrower → property → document validation → compliance → drafting, then **pauses at the Approve / Revise gate** with a draft letter PDF you can download. Approving releases the final letter; rejecting sends your feedback to the replan sub-orchestrator, which either recomputes the numbers, redrafts the wording, or explains why the value you asked to change is fixed by regulation.
+Ask for a full IPA and the graph runs borrower → property → document validation → compliance → drafting. Each agent reports as it finishes, and the priced figures land in the Loan Scenario card — every number computed by the calculator, not the model:
+
+![An end-to-end IPA assessment — per-agent progress on the right, priced result on the left](images/workbench_ipa_assess_thinking_sum.png)
+
+The run then **pauses at the Approve / Revise gate** with a draft letter PDF you can download, watermarked DRAFT until someone signs off. Approving releases the final letter; rejecting sends your feedback to the replan sub-orchestrator, which either recomputes the numbers, redrafts the wording, or explains why the value you asked to change is fixed by regulation.
+
+![The drafted IPA letter, held at the human-in-the-loop gate](images/workbench_ipa_draft_pdf_blurred.png)
 
 The chat needs a valid API key to reply. The read-only panels render without one.
 
@@ -63,6 +71,10 @@ mkdir "mas/t&c"
 ```
 
 The path is resolved relative to `mas/`, so `mas/t&c/*.pdf` is what the tool reads. Point `RM_COPILOT_POLICY_DIR` elsewhere if you prefer another location.
+
+With a corpus in place, product answers cite the clauses they came from — here on the customer side, where the same retrieval backs the self-service assistant:
+
+![The customer explorer answering a T&C question with clause citations](images/workbench_customer_rag_blurred.png)
 
 **No corpus is bundled here**, because the documents used in the study are a bank's own published promotional terms and are not ours to redistribute. Everything else runs without it: the tool returns no results when the directory is absent or empty, the policy agent says so rather than inventing an answer, and the retrieval tests skip themselves (`no policy PDFs under t&c/`).
 
